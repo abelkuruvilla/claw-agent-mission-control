@@ -1,0 +1,3 @@
+package migrations
+
+// Migrations placeholder

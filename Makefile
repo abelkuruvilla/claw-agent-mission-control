@@ -1,8 +1,10 @@
-.PHONY: all build clean dev test lint help
+.PHONY: all build clean dev test lint help service-start service-stop service-status
 
 # Variables
 BINARY_NAME=mission-control
 BUILD_DIR=bin
+BINARY_PATH=$(BUILD_DIR)/$(BINARY_NAME)
+SERVICE_PID_FILE=.mission-control.pid
 GO_FILES=$(shell find . -name '*.go' -not -path './ui/*')
 
 # Default target
@@ -45,13 +47,64 @@ build-ui:
 
 ## build-server: Build Go server (requires built frontend)
 build-server:
+	@echo "Copying UI assets for embedding..."
+	@rm -rf internal/ui/assets
+	@cp -r ui/out internal/ui/assets
 	@echo "Building server..."
 	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=1 go build -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/server
+	@echo "Cleaning up copied assets..."
+	@rm -rf internal/ui/assets
 
 ## run: Run the production binary
 run: build
 	./$(BUILD_DIR)/$(BINARY_NAME)
+
+## service-start: Run binary as background service (uses bin/mission-control)
+service-start:
+	@if [ ! -f $(BINARY_PATH) ]; then \
+		echo "Binary not found at $(BINARY_PATH). Run 'make build' first."; \
+		exit 1; \
+	fi
+	@if [ -f $(SERVICE_PID_FILE) ]; then \
+		pid=$$(cat $(SERVICE_PID_FILE)); \
+		if kill -0 $$pid 2>/dev/null; then \
+			echo "Service already running (PID $$pid). Use 'make service-stop' first."; \
+			exit 1; \
+		fi; \
+		rm -f $(SERVICE_PID_FILE); \
+	fi
+	@echo "Starting mission-control service in background..."
+	@env HOST=0.0.0.0 nohup ./$(BINARY_PATH) > mission-control.log 2>&1 & echo $$! > $(SERVICE_PID_FILE)
+	@echo "Service started (PID $$(cat $(SERVICE_PID_FILE))). Logs: mission-control.log"
+
+## service-stop: Stop the background service
+service-stop:
+	@if [ ! -f $(SERVICE_PID_FILE) ]; then \
+		echo "No PID file found. Service may not be running."; \
+		exit 0; \
+	fi
+	@pid=$$(cat $(SERVICE_PID_FILE)); \
+	if kill -0 $$pid 2>/dev/null; then \
+		kill $$pid && echo "Service stopped (PID $$pid)."; \
+	else \
+		echo "Process $$pid not running."; \
+	fi; \
+	rm -f $(SERVICE_PID_FILE)
+
+## service-status: Show whether the service is running
+service-status:
+	@if [ ! -f $(SERVICE_PID_FILE) ]; then \
+		echo "Service not running (no PID file)."; \
+		exit 0; \
+	fi
+	@pid=$$(cat $(SERVICE_PID_FILE)); \
+	if kill -0 $$pid 2>/dev/null; then \
+		echo "Service running (PID $$pid)."; \
+	else \
+		echo "Service not running (stale PID file)."; \
+		rm -f $(SERVICE_PID_FILE); \
+	fi
 
 ## clean: Remove build artifacts
 clean:
@@ -60,6 +113,8 @@ clean:
 	rm -rf ui/.next
 	rm -rf ui/out
 	rm -rf ui/node_modules
+	rm -rf internal/ui/assets
+	rm -f mission-control server claw-agent-mission-control
 
 ## test: Run all tests
 test: test-go test-ui
@@ -130,3 +185,5 @@ install-tools:
 ## sqlc: Generate sqlc code
 sqlc:
 	sqlc generate
+
+service-rebuild: build service-stop service-start

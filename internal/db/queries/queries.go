@@ -1,0 +1,3 @@
+package queries
+
+// Queries placeholder

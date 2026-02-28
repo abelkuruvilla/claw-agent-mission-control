@@ -1,119 +1,217 @@
-# 🎮 Claw Agent Mission Control
+# Claw Agent Mission Control
 
-AI Agent Orchestration Dashboard for OpenClaw Gateway
+Production dashboard for managing AI agents, orchestrating tasks, and tracking execution in real time through OpenClaw Gateway.
 
-[![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat-square&logo=go)](https://go.dev/)
-[![Next.js](https://img.shields.io/badge/Next.js-14+-000000?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![Go](https://img.shields.io/badge/Go-1.25.6-00ADD8?logo=go)](https://go.dev/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black?logo=next.js)](https://nextjs.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Overview
 
-Claw Agent Mission Control is a production-grade dashboard for managing AI agents and tasks. It implements the **GSD (Get Shit Done)** and **Ralph Loop** methodologies for autonomous, context-aware task execution.
+Claw Agent Mission Control combines a Go API server, an embedded Next.js UI, and a SQLite database into one deployable service. It helps teams create agents, assign and monitor tasks, orchestrate execution, and review outcomes with live updates.
 
-### Key Features
+The system supports two execution patterns:
 
-- 🤖 **Agent Management** - Create, configure, and monitor AI agents
-- 📋 **Task Board** - Asana-style Kanban board for task management
-- ⚡ **GSD Execution** - Spec-driven development with research, planning, and verification
-- 🔄 **Ralph Loop** - Autonomous iteration until all PRD items pass
-- 👥 **Sub-Agent Spawning** - Hierarchical agent orchestration
-- 📡 **Real-time Updates** - WebSocket-powered live status
-- 🌙 **Dark Mode** - Clean, minimal interface
+- GSD for planning and orchestration
+- Ralph Loop for iterative story execution
+
+## Features
+
+- Agent lifecycle management and identity file support
+- Task board with planning/execution/review states
+- Phase and story tracking for structured delivery
+- Real-time WebSocket updates for events and progress
+- Embedded UI in a single Go binary
+- SQLite + sqlc for lightweight, type-safe persistence
+
+## Prerequisites
+
+- Go `1.25.6` (or compatible `1.22+` runtime as documented)
+- Node.js `20+`
+- npm
+- OpenClaw Gateway running and reachable
 
 ## Quick Start
 
-### Prerequisites
-
-- Go 1.22+
-- Node.js 20+
-- OpenClaw Gateway running
-
-### Installation
+1) Clone repository:
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/claw-agent-mission-control.git
+git clone https://github.com/abelkuruvilla/claw-agent-mission-control.git
 cd claw-agent-mission-control
+```
 
-# Copy environment file
+2) Configure environment:
+
+```bash
 cp .env.example .env
+```
 
-# Edit .env with your OpenClaw Gateway details
-# OPENCLAW_GATEWAY_URL=ws://127.0.0.1:18789
-# OPENCLAW_GATEWAY_TOKEN=your-token
+Set at least:
 
-# Build and run
+```env
+OPENCLAW_GATEWAY_URL=ws://127.0.0.1:18789
+OPENCLAW_GATEWAY_TOKEN=your-token-here
+```
+
+3) Build:
+
+```bash
+make build
+```
+
+4) Run:
+
+```bash
+./bin/mission-control
+```
+
+5) Open UI:
+
+- `http://localhost:8080`
+
+## Development
+
+Install dependencies:
+
+```bash
+make deps
+```
+
+Start full development mode (UI + API hot reload):
+
+```bash
+make dev
+```
+
+Useful commands:
+
+```bash
+make dev-ui
+make dev-api
+make test
+make lint
+make fmt
+```
+
+Default dev ports:
+
+- UI: `http://localhost:3000`
+- API: `http://localhost:8080`
+
+## Configuration
+
+All runtime configuration is environment-based. See `.env.example` for complete options.
+
+### Core
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `HOST` | `0.0.0.0` | Bind address |
+| `PORT` | `8080` | API/UI port |
+| `ENV` | `development` | Runtime mode |
+| `DATABASE_PATH` | `./data/mission-control.db` | SQLite database location |
+
+### OpenClaw
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `OPENCLAW_GATEWAY_URL` | Yes | OpenClaw WebSocket URL |
+| `OPENCLAW_GATEWAY_TOKEN` | Yes | Gateway auth token |
+| `OPENCLAW_CONFIG_PATH` | No | Optional config source for URL/token |
+
+### Execution defaults
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `DEFAULT_APPROACH` | `gsd` | Task approach |
+| `DEFAULT_MODEL` | `anthropic/claude-sonnet-4-5` | Model selection |
+| `MAX_PARALLEL_EXECUTIONS` | `3` | Concurrency limit |
+| `GSD_DEPTH` | `standard` | GSD planning depth |
+| `GSD_MODE` | `interactive` | GSD execution mode |
+| `RALPH_MAX_ITERATIONS` | `10` | Story loop cap |
+| `RALPH_AUTO_COMMIT` | `true` | Auto-commit behavior |
+
+## Build and Deployment
+
+### Local production build
+
+```bash
+make clean
 make build
 ./bin/mission-control
 ```
 
-Open http://localhost:8080 in your browser.
+### Docker
 
-### Development
+Build image:
 
 ```bash
-# Start development mode (hot reload)
-make dev
-
-# Frontend only (separate terminal)
-cd ui && npm run dev
-
-# Backend only (separate terminal)
-air
+make docker
 ```
 
-## Configuration
+Run with compose:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Server port | `8080` |
-| `OPENCLAW_GATEWAY_URL` | OpenClaw WebSocket URL | `ws://127.0.0.1:18789` |
-| `OPENCLAW_GATEWAY_TOKEN` | Authentication token | (required) |
-| `DATABASE_PATH` | SQLite database path | `./data/mission-control.db` |
-| `DEFAULT_APPROACH` | Default task approach | `gsd` |
+```bash
+docker-compose up -d
+```
 
-See [.env.example](.env.example) for all options.
+### Background service helpers
+
+```bash
+make service-start
+make service-status
+make service-stop
+```
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────┐
-│         Single Go Binary                │
-│  ┌─────────────┐  ┌─────────────────┐  │
-│  │  Embedded   │  │   Go HTTP       │  │
-│  │  Next.js UI │  │   Server        │  │
-│  │             │  │   + WebSocket   │  │
-│  └─────────────┘  └─────────────────┘  │
-│           │              │              │
-│           ▼              ▼              │
-│     ┌─────────────────────────┐        │
-│     │   SQLite Database       │        │
-│     └─────────────────────────┘        │
-└─────────────────────────────────────────┘
-                    │
-                    ▼
-          ┌─────────────────┐
-          │ OpenClaw Gateway │
-          └─────────────────┘
+High-level component flow:
+
+```mermaid
+flowchart TD
+  Browser["Browser"] -->|HTTP /api/v1| Server["Go Echo Server"]
+  Browser -->|WebSocket /ws| Hub["WebSocket Hub"]
+  Server --> Store["Store Layer"]
+  Store --> DB["SQLite"]
+  Server --> OpenClaw["OpenClaw Gateway"]
+  Server --> UIAssets["Embedded Next.js UI"]
 ```
 
-## Documentation
+Detailed architecture documentation:
 
-- [Product Requirements Document](docs/PRD.md)
-- [API Reference](docs/API.md) (coming soon)
-- [Development Guide](docs/DEVELOPMENT.md) (coming soon)
+- `docs/ARCHITECTURE.md`
+- `docs/API.md`
+- `docs/AGENT_INTEGRATION.md`
 
-## Contributing
+Note: transient QA and branch-work report files are not retained long-term. Their conclusions are summarized into the canonical docs above before PRs are opened.
 
-Contributions are welcome! Please read our contributing guidelines first.
+## Project Structure
+
+```text
+cmd/
+  server/             # Application entrypoint
+internal/
+  api/                # HTTP server, routes, handlers
+  config/             # Env config loader
+  db/                 # Migrations, sqlc queries/models
+  executor/           # GSD / Ralph execution logic
+  openclaw/           # Gateway integration
+  queue/              # Task queue and watchdog
+  store/              # Data access facade
+  websocket/          # Real-time hub
+ui/
+  src/                # Next.js application code
+docs/                 # Public documentation
+mission-control-skill/# Agent skill package
+```
+
+## Security Notes for Public GitHub
+
+- Never commit `.env` or raw credentials
+- Keep local databases and sqlite journals out of git (`data/`, `*.db*`)
+- Keep private keys/certs out of git (`*.key`, `*.pem`, `*.cert`, `*.p12`)
+- Use `.env.example` as the only committed env template
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
-
-## Acknowledgments
-
-- [OpenClaw](https://github.com/openclaw/openclaw) - AI Agent Runtime
-- [GSD](https://github.com/glittercowboy/get-shit-done) - Context Engineering
-- [Ralph](https://github.com/snarktank/ralph) - Autonomous Agent Loop
-- [Temporal UI Server](https://github.com/temporalio/ui-server) - Embedding Pattern
+This project uses the MIT License. See `LICENSE`.

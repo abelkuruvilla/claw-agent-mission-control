@@ -13,6 +13,17 @@ dist/
 data/
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
+
+# Certificates and keys
+*.key
+*.pem
+*.cert
+*.p12
+
+# Local secret bundles
+.secrets/
 
 # Environment
 .env
@@ -30,6 +41,7 @@ ui/node_modules/
 ui/.next/
 ui/out/
 ui/.env*.local
+internal/ui/assets/
 
 # IDE
 .idea/
@@ -46,6 +58,15 @@ Thumbs.db
 *.log
 logs/
 
+# Service
+.mission-control.pid
+
 # Temporary
 tmp/
 temp/
+
+# Compiled binaries
+/server
+/bin/
+cmd/*/server
+cmd/server/server

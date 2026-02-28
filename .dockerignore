@@ -1,0 +1,70 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+mission-control
+server
+claw-agent-mission-control
+
+# Node modules (we'll install fresh in the container)
+ui/node_modules/
+ui/.next/
+
+# Go
+*.test
+*.out
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Data files
+data/
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+# Certificates and keys
+*.key
+*.pem
+*.cert
+*.p12
+
+# Local secret bundles
+.secrets/
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# Temp files
+*.tmp
+progress.txt
+prd.json
+prd.json.tmp
+STORY-*.md
