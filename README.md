@@ -24,6 +24,14 @@ The system supports two execution patterns:
 - Embedded UI in a single Go binary
 - SQLite + sqlc for lightweight, type-safe persistence
 
+## Demo Images
+![Task Board](./images/image-tasks.png)
+*Task management and agent orchestration interface*
+
+![Agent Detail](./images/image-agents.png)
+*Agent and identity management view*
+
+
 ## Prerequisites
 
 - Go `1.25.6` (or compatible `1.22+` runtime as documented)
