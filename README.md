@@ -1,6 +1,12 @@
 # Claw Agent Mission Control
 
-Production dashboard for managing AI agents, orchestrating tasks, and tracking execution in real time through OpenClaw Gateway.
+Dashboard for managing AI agents, orchestrating tasks, and tracking execution in real time through OpenClaw Gateway.
+
+## Project Status and Deployment Notes
+
+- This project is a **work in progress** and currently in **alpha** stage.
+- Run this application on the same system that hosts your OpenClaw instance so it can access local OpenClaw config files (for example via `OPENCLAW_CONFIG_PATH`).
+- For self-hosting, prefer deploying it inside a private Tailscale network instead of exposing it directly to the public internet.
 
 [![Go](https://img.shields.io/badge/Go-1.25.6-00ADD8?logo=go)](https://go.dev/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black?logo=next.js)](https://nextjs.org/)
